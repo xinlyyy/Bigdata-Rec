@@ -1,0 +1,63 @@
+syntax = "proto2";
+package protos;
+
+message MultiValueFields {
+    repeated string input_name = 1;
+}
+
+// Message for configuring exporting models.
+message ExportConfig {
+    // batch size used for exported model, -1 indicates batch_size is None
+    // which is only supported by classification model right now, while
+    // other models support static batch_size
+    optional int32 batch_size = 1 [default = -1];
+
+    // type of exporter [final | latest | best | none] when train_and_evaluation
+    // final: performs a single export in the end of training
+    // latest: regularly exports the serving graph and checkpoints
+    // best: export the best model according to best_exporter_metric
+    // none: do not perform export
+    optional string exporter_type = 2 [default = 'final'];
+
+    // the metric used to determine the best checkpoint
+    optional string best_exporter_metric = 4 [default = 'auc'];
+    // metric value the bigger the best
+    optional bool metric_bigger = 5 [default = true];
+    // enable early stop
+    optional bool enable_early_stop = 6 [default=false];
+    // custom early stop function, format:
+    //    early_stop_func(eval_results, early_stop_params)
+    // return True if should stop
+    optional string early_stop_func = 601;
+    // custom early stop parameters
+    optional string early_stop_params = 602;
+    // early stop max check steps
+    optional int32 max_check_steps = 7 [default=10000];
+
+    // each feature has a placeholder
+    optional bool multi_placeholder = 8 [default = true];
+
+    // export to keep, only for exporter_type in [best, latest]
+    optional int32 exports_to_keep = 9 [default = 1];
+
+    // multi value field list
+    optional MultiValueFields multi_value_fields = 10;
+
+    // auto analyze multi value fields
+    optional bool auto_multi_value = 16 [default = false];
+
+    // is placeholder named by input
+    optional bool placeholder_named_by_input = 11 [default = false];
+
+    // filter out inputs, only keep effective ones
+    optional bool filter_inputs = 12 [default = true];
+
+    // export the original feature values as string
+    optional bool export_features = 13 [default = false];
+
+    // export the outputs required by RTP
+    optional bool export_rtp_outputs = 14 [default = false];
+
+    // export asset files
+    repeated string asset_files = 15;
+}

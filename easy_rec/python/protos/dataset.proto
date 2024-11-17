@@ -1,0 +1,327 @@
+syntax = "proto2";
+package protos;
+
+// Weighted Random Sampling ItemID not in Batch
+message NegativeSampler {
+    // sample data path
+    // itemid weight attrs
+    required string input_path = 1;
+    // number of negative sample
+    required uint32 num_sample = 2;
+    // field names of attrs in train data or eval data
+    repeated string attr_fields = 3;
+    // field name of item_id in train data or eval data
+    required string item_id_field = 4;
+
+    optional string attr_delimiter = 5 [default=":"];
+
+    optional uint32 num_eval_sample = 6 [default=0];
+
+    // only works on DataScience/Local
+    optional string field_delimiter = 7 [default="\001"];
+}
+
+message NegativeSamplerInMemory {
+    // sample data path
+    // itemid weight attrs
+    required string input_path = 1;
+    // number of negative sample
+    required uint32 num_sample = 2;
+    // field names of attrs in train data or eval data
+    repeated string attr_fields = 3;
+    // field name of item_id in train data or eval data
+    required string item_id_field = 4;
+
+    optional string attr_delimiter = 5 [default=":"];
+
+    optional uint32 num_eval_sample = 6 [default=0];
+
+    // only works on DataScience/Local
+    optional string field_delimiter = 7 [default="\001"];
+}
+
+// Weighted Random Sampling ItemID not with Edge
+message NegativeSamplerV2 {
+    // user data path
+    // userid weight
+    required string user_input_path = 1;
+    // item data path
+    // itemid weight attrs
+    required string item_input_path = 2;
+    // positive edge path
+    // userid itemid weight
+    required string pos_edge_input_path = 3;
+    // number of negative sample
+    required uint32 num_sample = 4;
+    // field names of attrs in train data or eval data
+    repeated string attr_fields = 5;
+    // field name of item_id in train data or eval data
+    required string item_id_field = 6;
+    // field name of user_id in train data or eval data
+    required string user_id_field = 7;
+
+    optional string attr_delimiter = 8 [default=":"];
+
+    optional uint32 num_eval_sample = 9 [default=0];
+
+    // only works on DataScience/Local
+    optional string field_delimiter = 10 [default="\001"];
+}
+
+// Weighted Random Sampling ItemID not in Batch and Sampling Hard Edge
+message HardNegativeSampler {
+    // user data path
+    // userid weight
+    required string user_input_path = 1;
+    // item data path
+    // itemid weight attrs
+    required string item_input_path = 2;
+    // hard negative edge path
+    // userid itemid weight
+    required string hard_neg_edge_input_path = 3;
+    // number of negative sample
+    required uint32 num_sample = 4;
+    // max number of hard negative sample
+    required uint32 num_hard_sample = 5;
+    // field names of attrs in train data or eval data
+    repeated string attr_fields = 6;
+    // field name of item_id in train data or eval data
+    required string item_id_field = 7;
+    // field name of user_id in train data or eval data
+    required string user_id_field = 8;
+
+    optional string attr_delimiter = 9 [default=":"];
+
+    optional uint32 num_eval_sample = 10 [default=0];
+
+    // only works on DataScience/Local
+    optional string field_delimiter = 11 [default="\001"];
+}
+
+// Weighted Random Sampling ItemID not with Edge and Sampling Hard Edge
+message HardNegativeSamplerV2 {
+    // user data path
+    // userid weight
+    required string user_input_path = 1;
+    // item data path
+    // itemid weight attrs
+    required string item_input_path = 2;
+    // positive edge path
+    // userid itemid weight
+    required string pos_edge_input_path = 3;
+    // hard negative edge path
+    // userid itemid weight
+    required string hard_neg_edge_input_path = 4;
+    // number of negative sample
+    required uint32 num_sample = 5;
+    // max number of hard negative sample
+    required uint32 num_hard_sample = 6;
+    // field names of attrs in train data or eval data
+    repeated string attr_fields = 7;
+    // field name of item_id in train data or eval data
+    required string item_id_field = 8;
+    // field name of user_id in train data or eval data
+    required string user_id_field = 9;
+
+    optional string attr_delimiter = 10 [default=":"];
+
+    optional uint32 num_eval_sample = 11 [default=0];
+
+    // only works on DataScience/Local
+    optional string field_delimiter = 12 [default="\001"];
+}
+
+message DatasetConfig {
+    // mini batch size to use for training and evaluation.
+    optional uint32 batch_size = 1 [default = 32];
+
+    enum FieldType {
+        INT32 = 0;
+        INT64 = 1;
+        STRING = 2;
+        FLOAT = 4;
+        DOUBLE = 5;
+        BOOL = 6;
+    }
+
+    message Field {
+        required string input_name = 1;
+        required FieldType input_type = 2 [default = STRING];
+        optional string default_val = 3;
+        optional uint32 input_dim = 4 [default=1];
+        optional uint32 input_shape = 5 [default = 1];
+        // user-defined function for label. eg: tf.math.log1p, remap_lbl
+        optional string user_define_fn = 6;
+        // user-defined function path. eg: /samples/demo_script/process_lbl.py
+        optional string user_define_fn_path = 7;
+        // output field type of user-defined function.
+        optional FieldType user_define_fn_res_type = 8;
+        // ignore value
+        optional string ignore_val = 9;
+    }
+
+    // set auto_expand_input_fields to true to
+    // auto_expand field[1-21] to field1, field2, ..., field21
+    optional bool auto_expand_input_fields = 3 [default = false];
+
+    // label fields, normally only one field is used.
+    // For multiple target models such as MMOE
+    // multiple label_fields will be set.
+    repeated string label_fields = 4;
+
+    // label separator
+    repeated string label_sep = 41;
+
+    // label dimensions which need to be set when there
+    // are labels have dimension > 1
+    repeated uint32 label_dim = 42;
+
+    message LabelFunction {
+        required string label_name = 1;
+        required string label_func = 2;
+    }
+
+    // extra transformation functions that generate new labels
+    repeated LabelFunction extra_label_func = 43;
+
+    // whether to shuffle data
+    optional bool shuffle = 5 [default = true];
+
+    // shufffle buffer for better performance, even shuffle buffer is set,
+    // it is suggested to do full data shuffle before training
+    // especially when the performance of models is not good.
+    optional int32 shuffle_buffer_size = 11 [default = 32];
+
+    // The number of times a data source is read. If set to zero, the data source
+    // will be reused indefinitely.
+    optional uint32 num_epochs = 6 [default = 0];
+
+    // Number of decoded batches to prefetch.
+    optional uint32 prefetch_size = 7 [default = 32];
+
+    // shard dataset to 1/num_workers in distribute mode
+    // this param is not used anymore
+    optional bool shard = 801 [default = false];
+
+    // shard by file, not by sample, valid only for CSVInput
+    optional bool file_shard = 802 [default = false];
+
+    enum InputType {
+        // csv format input, could be used in local or hdfs
+        // support .gz compression(but not .tar.gz files)
+        CSVInput = 10;
+        // @Depreciated
+        CSVInputV2 = 11;
+        // extended csv format, allow quote in fields
+        CSVInputEx = 12;
+        // @Depreciated, has memory leak problem
+        OdpsInput = 2;
+        // odps input, used on pai
+        OdpsInputV2 = 3;
+        DataHubInput = 15;
+        OdpsInputV3 = 9;
+        RTPInput = 4;
+        RTPInputV2 = 5;
+        OdpsRTPInput = 601;
+        OdpsRTPInputV2 = 602;
+        TFRecordInput = 7;
+        BatchTFRecordInput = 14;
+        // for the purpose to debug performance bottleneck of
+        // input pipelines
+        DummyInput = 8;
+        KafkaInput = 13;
+        HiveInput = 16;
+        HiveRTPInput = 17;
+        HiveParquetInput = 18;
+
+        // All features are packed into one field for fast copying to gpu,
+        // and there are no feature preprocessing step, it is assumed that
+        // features are preprocessed before training.
+        // Requirements: python3 and tf2.x due to multiprocssing spawn and
+        //    RaggedTensor apis.
+        ParquetInput = 19;
+
+        // Features are not packed, and are preprocessing separately.
+        // Requirements: python3 and tf2.x due to multiprocssing spawn and
+        //    RaggedTensor apis.
+        ParquetInputV2 = 20;
+
+        // c++ version of parquet dataset which currently are only available
+        // with deeprec.
+        ParquetInputV3 = 21;
+        CriteoInput = 1001;
+    }
+    required InputType input_type = 10;
+
+    // separator of column features, only used for CSVInput*
+    // not used in OdpsInput*
+    // binary separators are supported:
+    //   CTRL+A could be set as '\001'
+    //   CTRL+B could be set as '\002'
+    //   CTRL+C could be set as '\003'
+    // for RTPInput and OdpsRTPInput it is usually set
+    // to '\002'
+    optional string separator = 12 [default = ','];
+
+    // parallel preproces of raw data, avoid using too small
+    // or too large numbers(suggested be to small than
+    // number of the cores)
+    optional uint32 num_parallel_calls = 13 [default = 8];
+
+    // only used for OdpsInput/OdpsInputV2/OdpsRTPInput, comma separated
+    // for RTPInput, selected_cols use indices as column names
+    //  such as '1,2,4', where 1,2 are label columns, and
+    //  4 is the feature column, column 0,3 are not used,
+    optional string selected_cols = 14 [default = ''];
+
+    // selected col types, only used for OdpsInput/OdpsInputV2
+    // to avoid error setting of data types
+    optional string selected_col_types = 15 [default = ''];
+
+    // the input fields must be the same number and in the
+    // same order as data in csv files or odps tables
+    repeated Field input_fields = 16;
+
+    // for RTPInput only
+    optional string rtp_separator = 17 [default = ';'];
+
+    // ignore some data errors
+    // it is not suggested to set this parameter
+    optional bool ignore_error = 18 [default=false];
+
+    // whether to use pai global shuffle queue, only for OdpsInput,
+    // OdpsInputV2, OdpsRTPInputV2
+    optional bool pai_worker_queue = 19 [default = false];
+    optional int32 pai_worker_slice_num = 20 [default = 100];
+
+    // if true, one worker will duplicate the data of the chief node
+    // and undertake the gradient computation of the chief node
+    optional bool chief_redundant = 21 [default = false];
+
+    // input field for sample weight
+    optional string sample_weight = 22;
+    // the compression type of tfrecord
+    optional string data_compression_type = 23 [default = ''];
+
+    // n data for one feature in tfrecord
+    optional uint32 n_data_batch_tfrecord = 24;
+
+    // for csv files, may optionally with an header
+    // in that case, input_name must match header name,
+    // and the number and the order of input_fields
+    // may not be the same as that in csv files.
+    optional bool with_header = 25 [default = false];
+
+    repeated string feature_fields = 26;
+
+    oneof sampler {
+        NegativeSampler negative_sampler = 101;
+        NegativeSamplerV2 negative_sampler_v2 = 102;
+        HardNegativeSampler hard_negative_sampler = 103;
+        HardNegativeSamplerV2 hard_negative_sampler_v2 = 104;
+        NegativeSamplerInMemory negative_sampler_in_memory = 105;
+    }
+    optional uint32 eval_batch_size = 1001 [default = 4096];
+
+    optional bool drop_remainder = 1002 [default = false];
+}

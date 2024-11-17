@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: easy-rec
+Version: 0.8.5
+Summary: An easy-to-use framework for Recommendation
+Home-page: https://github.com/alibaba/EasyRec
+Author: EasyRec Team
+Author-email: easy_rec@alibaba-inc.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 3
+Provides-Extra: all
+Provides-Extra: tests
+License-File: LICENSE
+
+UNKNOWN
+

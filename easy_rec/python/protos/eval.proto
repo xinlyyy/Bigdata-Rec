@@ -1,0 +1,94 @@
+syntax = "proto2";
+package protos;
+
+message AUC {
+    optional uint32 num_thresholds = 1 [default = 200];
+}
+
+message RecallAtTopK {
+    optional uint32 topk = 1 [default = 5];
+}
+
+message AvgPrecisionAtTopK {
+    optional uint32 topk = 1 [default = 5];
+}
+
+message MeanAbsoluteError {
+}
+
+message MeanSquaredError {
+}
+
+message Accuracy {
+}
+
+message Precision {
+}
+
+message Recall {
+}
+
+message Max_F1 {
+}
+
+message RootMeanSquaredError {
+}
+
+message GAUC {
+    // uid field name
+    required string uid_field = 1;
+    // reduction method for auc of different users
+    // * "mean": simple mean of different users
+    // * "mean_by_sample_num": weighted mean with sample num of different users
+    // * "mean_by_positive_num": weighted mean with positive sample num of different users
+    optional string reduction = 2 [default='mean'];
+}
+
+message SessionAUC {
+    // session id field name
+    required string session_id_field = 1;
+    // reduction: reduction method for auc of different sessions
+    // * "mean": simple mean of different sessions
+    // * "mean_by_sample_num": weighted mean with sample num of different sessions
+    // * "mean_by_positive_num": weighted mean with positive sample num of different sessions
+    optional string reduction = 2 [default='mean'];
+}
+
+message EvalMetrics {
+    oneof metric {
+        AUC auc = 1;
+        RecallAtTopK recall_at_topk = 2;
+        MeanAbsoluteError mean_absolute_error = 3;
+        MeanSquaredError mean_squared_error = 4;
+        Accuracy accuracy = 5;
+        Max_F1 max_f1 = 6;
+        RootMeanSquaredError root_mean_squared_error = 7;
+        GAUC gauc = 8;
+        SessionAUC session_auc = 9;
+        Recall recall = 10;
+        Precision precision = 11;
+        AvgPrecisionAtTopK precision_at_topk = 12;
+    }
+}
+
+// Message for configuring EasyRecModel evaluation jobs (eval.py).
+message EvalConfig {
+    // Number of examples to process of evaluation.
+    optional uint32 num_examples = 1 [default = 0];
+
+    // How often to run evaluation.
+    optional uint32 eval_interval_secs = 2 [default = 300];
+
+    // Maximum number of times to run evaluation. If set to 0, will run forever.
+    optional uint32 max_evals = 3 [default = 0];
+
+    // Whether the TensorFlow graph used for evaluation should be saved to disk.
+    optional bool save_graph = 4 [default = false];
+
+    // Type of metrics to use for evaluation.
+    // possible values:
+    repeated EvalMetrics metrics_set = 5;
+
+    // Evaluation online with batch forward data of training
+    optional bool eval_online = 6 [default = false];
+}

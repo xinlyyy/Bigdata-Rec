@@ -1,0 +1,150 @@
+syntax = "proto2";
+package protos;
+
+import "easy_rec/python/protos/dnn.proto";
+
+message HighWayTower {
+    optional string input = 1;
+    required uint32 emb_size = 2;
+    required string activation = 3 [default = 'relu'];
+    optional float dropout_rate = 4;
+    optional float init_gate_bias = 5 [default = -3.0];
+    optional uint32 num_layers = 6 [default = 1];
+}
+
+message PeriodicEmbedding {
+    required uint32 embedding_dim = 1;
+    required float  sigma = 2;
+    optional bool add_linear_layer = 3 [default = true];
+    optional string linear_activation = 4 [default = 'relu'];
+    optional bool output_3d_tensor = 5;
+    optional bool output_tensor_list = 6;
+}
+
+message AutoDisEmbedding {
+    required uint32 embedding_dim = 1;
+    required uint32 num_bins = 2;
+    required float keep_prob = 3 [default = 0.8];
+    required float temperature = 4;
+    optional bool output_3d_tensor = 5;
+    optional bool output_tensor_list = 6;
+}
+
+message NaryDisEmbedding {
+    required uint32 embedding_dim = 1;
+    repeated uint32 carries = 2;
+    optional float multiplier = 3 [default = 1.0];
+    optional string intra_ary_pooling = 4 [default = 'sum'];
+    // for now, inter_ary_pooling not support yet
+    optional string inter_ary_pooling = 5 [default = 'concat'];
+    optional bool output_3d_tensor = 6 [default = false];
+    optional bool output_tensor_list = 7;
+    optional uint32 num_replicas = 8 [default = 1];
+}
+
+message SENet {
+    required uint32 reduction_ratio = 1 [default = 4];
+    optional uint32 num_squeeze_group = 2 [default = 2];
+    optional bool use_skip_connection = 3 [default = true];
+    optional bool use_output_layer_norm = 4 [default = true];
+}
+
+message Bilinear {
+    required string type = 1 [default = 'interaction'];
+    required bool use_plus = 2 [default = true];
+    required uint32 num_output_units = 3;
+}
+
+message FiBiNet {
+    optional Bilinear bilinear = 1;
+    required SENet senet = 2;
+    optional MLP mlp = 8;
+}
+
+message MaskBlock {
+    optional float reduction_factor = 1;
+    optional uint32 output_size = 2;
+    optional uint32 aggregation_size = 3;
+    optional bool input_layer_norm = 4 [default = false];
+    optional uint32 projection_dim = 5;
+}
+
+message MaskNet {
+    repeated MaskBlock mask_blocks = 1;
+    required bool use_parallel = 2 [default = true];
+    optional MLP mlp = 3;
+    optional bool input_layer_norm = 4 [default = true];
+}
+
+message MMoELayer {
+    // number of tasks
+    required uint32 num_task = 1;
+    // mmoe expert mlp layer definition
+    optional MLP expert_mlp = 2;
+    // number of mmoe experts
+    optional uint32 num_expert = 3;
+}
+
+// used in CDN model
+message WeightedGate {
+    optional uint32 weight_index = 1 [default = 0];
+    optional MLP mlp = 2;
+}
+
+// used in PPNet
+message GateNN {
+    optional uint32 output_dim = 1;
+    optional uint32 hidden_dim = 2;
+    // activation function
+    optional string activation = 3 [default = 'relu'];
+    // use batch normalization
+    optional bool use_bn = 4 [default = false];
+    optional float dropout_rate = 5;
+}
+
+message PPNet {
+    required MLP mlp = 1;
+    required GateNN gate_params = 2;
+    // run mode: eager, lazy
+    required string mode = 3 [default = 'eager'];
+    optional bool full_gate_input = 4 [default = true];
+}
+
+message TextCNN {
+    repeated uint32 filter_sizes = 1;
+    repeated uint32 num_filters = 2;
+    required uint32 pad_sequence_length = 3;
+    optional string activation = 4 [default = 'relu'];
+    optional MLP mlp = 5;
+}
+
+message OverlapFeature {
+    optional string separator = 1;
+    optional string default_value = 2;
+    repeated string methods = 3;
+    optional string normalize_fn = 4;
+    repeated float boundaries = 5;
+    optional int32 embedding_dim = 6;
+    optional int32 print_first_n = 7 [default = 0];
+    optional int32 summarize = 8;
+}
+
+message MappedDotProduct {
+    optional string separator = 1;
+    optional float default_value = 2;
+    optional string normalize_fn = 3;
+    repeated float boundaries = 4;
+    optional int32 embedding_dim = 5;
+    optional int32 print_first_n = 6 [default = 0];
+    optional int32 summarize = 7;
+}
+
+message AITMTower {
+    optional uint32 project_dim = 1;
+    optional MLP transfer_mlp = 2;
+    optional bool stop_gradient = 3 [default = true];
+}
+
+message CIN {
+    repeated int32 hidden_feature_sizes = 1;
+}

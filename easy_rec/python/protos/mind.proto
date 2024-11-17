@@ -1,0 +1,73 @@
+syntax = "proto2";
+package protos;
+
+import "easy_rec/python/protos/dnn.proto";
+import "easy_rec/python/protos/simi.proto";
+
+message Capsule {
+  // max number of high capsules
+  optional uint32 max_k = 1 [default = 5];
+  // max behaviour sequence length
+  required uint32 max_seq_len = 2;
+  // high capsule embedding vector dimension
+  required uint32 high_dim = 3;
+  // number EM iterations
+  optional uint32 num_iters = 4 [default=3];
+  // routing logits scale
+  optional float routing_logits_scale = 5 [default=20];
+  // routing logits initial stddev
+  optional float routing_logits_stddev = 6 [default=1.0];
+  // squash power
+  optional float squash_pow = 7 [default=1.0];
+  // output ratio
+  optional float scale_ratio = 8 [default=1.0];
+  // constant interest number
+  // in default, use log(seq_len)
+  optional bool const_caps_num = 9 [default=false];
+}
+
+message MIND {
+  enum UserSeqCombineMethod {
+    CONCAT = 0;
+    SUM = 1;
+  }
+  // preprocessing dnn before entering capsule layer
+  optional DNN pre_capsule_dnn = 101;
+
+  // dnn layers applied on user_context(none sequence features)
+  required DNN user_dnn = 102;
+
+  // concat user and capsule dnn
+  required DNN concat_dnn = 103;
+
+  // method to combine several user sequences
+  // such as item_ids, category_ids
+  optional UserSeqCombineMethod user_seq_combine = 104 [default=SUM];
+
+  // dnn layers applied on item features
+  required DNN item_dnn = 2;
+
+  required Capsule capsule_config = 3;
+
+  // similarity power, the paper says that the big
+  // the better
+  optional float simi_pow = 4 [default=10];
+
+  optional Similarity simi_func = 5 [default=COSINE];
+
+  // add a layer for scaling the similarity
+  optional bool scale_simi = 6 [default=true];
+
+  required float l2_regularization = 7 [default = 1e-4];
+
+  optional string time_id_fea = 8;
+
+  optional string item_id = 9;
+
+  optional bool ignore_in_batch_neg_sam = 10 [default = false];
+
+  // if small than 1.0, then a loss will be added to
+  // limit the maximal interest similarities, but
+  // in experiments, setup such a loss leads to low hitrate.
+  optional float max_interests_simi = 11 [default = 1.0];
+}

@@ -1,0 +1,177 @@
+syntax = "proto2";
+package protos;
+
+import "easy_rec/python/protos/optimizer.proto";
+
+enum DistributionStrategy {
+    // use old SyncReplicasOptimizer for ParameterServer training
+    NoStrategy = 0;
+    // PSStrategy with multiple gpus on one node could not work
+    // on pai-tf, could only work on TF >=1.15
+    PSStrategy = 1;
+    // could only work on PaiTF or TF >=1.15
+    // single worker multiple gpu mode
+    MirroredStrategy = 2;
+    // Depreciated
+    CollectiveAllReduceStrategy = 3;
+    // currently not working good
+    ExascaleStrategy = 4;
+    // multi worker multi gpu mode
+    // see tf.distribute.experimental.MultiWorkerMirroredStrategy
+    MultiWorkerMirroredStrategy = 5;
+    // use horovod strategy
+    HorovodStrategy = 6;
+    // support kv embedding, support kv embedding shard
+    SokStrategy = 7;
+    // support embedding shard, requires horovod
+    EmbeddingParallelStrategy = 8;
+}
+
+message IncrementSaveConfig {
+   message Kafka {
+     message Consumer {
+       optional string config_topic = 1;
+       optional string config_global = 2;
+       optional int64 offset = 3 [default=0];
+       optional int32 timeout = 4 [default=600];
+     }
+     required string server = 1;
+     required string topic = 2;
+     required Consumer consumer = 3;
+   }
+
+   message Datahub {
+     message Consumer {
+       optional int64 offset = 1 [default=0];
+       optional int32 timeout = 2 [default=600];
+     }
+     required string akId       = 1;
+     required string akSecret   = 2;
+     required string region     = 3;
+     required string project    = 4;
+     required string topic      = 5;
+     required Consumer consumer = 6;
+   }
+
+   message File {
+     optional string incr_save_dir = 1 [default="incr_save"];
+     // relative to model_dir
+     optional bool relative = 2 [default=true];
+     // for online inference, please set the storage.mount_path to mount_path
+     // online service will fail
+     optional string mount_path = 3 [default="/home/admin/docker_ml/workspace/incr_save/"];
+   }
+
+   optional int32 sparse_save_secs  = 1 [default=0];
+   optional int32 dense_save_secs   = 2 [default=0];
+   optional int32 sparse_save_steps = 3 [default=0];
+   optional int32 dense_save_steps  = 4 [default=0];
+
+   // if open, will save increment updates to model_dir/incr_save/
+   optional bool debug_save_update = 5 [default=false];
+
+   oneof incr_update {
+     Kafka kafka = 501;
+     Datahub datahub = 502;
+     File fs = 503;
+   }
+}
+
+// Message for configuring EasyRecModel training jobs (train.py).
+// Next id: 25
+message TrainConfig {
+    /* optimizer options */
+    repeated Optimizer optimizer_config = 1;
+
+    // If greater than 0, clips gradients by this value.
+    optional float gradient_clipping_by_norm = 2 [default = 0.0];
+
+    // Number of steps to train the models: if 0, will train the model
+    // indefinitely.
+    optional uint32 num_steps = 5 [default = 0];
+
+    /* options related checkpoint save and restore
+       NOTE: there are some options which are set in tf.estimator.RunConfig */
+    // Checkpoint to restore variables from.
+    optional string fine_tune_checkpoint = 6 [default = ""];
+
+    optional string fine_tune_ckpt_var_map = 8 [default = ""];
+
+    /* The following fields are for distributed training */
+    // Whether to synchronize replicas during training.
+    // In case so, build a SyncReplicateOptimizer
+    optional bool sync_replicas = 9 [default = true];
+
+    // only take effect on pai-tf when sync_replicas is set,
+    // options are:
+    //     raw, hash, multi_map, list, parallel
+    // in general, multi_map runs faster than other options.
+    optional string sparse_accumulator_type = 901 [default='multi_map'];
+
+    // Number of training steps between replica startup.
+    // This flag must be set to 0 if sync_replicas is set to true.
+    optional float startup_delay_steps = 10 [default = 15];
+
+    // Step interval for saving checkpoint
+    optional uint32 save_checkpoints_steps = 141 [default = 1000];
+
+    // Seconds interval for saving checkpoint
+    optional uint32 save_checkpoints_secs = 142;
+
+    // Max checkpoints to keep
+    optional uint32 keep_checkpoint_max = 143 [default = 10];
+
+    // Save summaries every this many steps.
+    optional uint32 save_summary_steps = 16 [default = 1000];
+
+    // The frequency global step/sec and the loss will be logged during training.
+    optional uint32 log_step_count_steps = 17 [default = 10];
+
+    // profiling or not
+    optional bool is_profiling = 18 [default = false];
+
+    // if variable shape is incompatible, clip or pad variables in checkpoint
+    optional bool force_restore_shape_compatible = 19 [default = false];
+
+    // DistributionStrategy, available values are 'mirrored' and 'collective' and 'ess'
+    // - mirrored: MirroredStrategy, single machine and multiple devices;
+    // - collective: CollectiveAllReduceStrategy, multiple machines and multiple devices.
+    optional DistributionStrategy train_distribute = 20 [default = NoStrategy];
+
+    // Number of gpus per machine
+    optional int32 num_gpus_per_worker = 21 [default = 1];
+
+    // summary model variables or not
+    optional bool summary_model_vars = 23 [default = false];
+
+    // distribute training protocol [grpc++ | star_server]
+    // grpc++: https://help.aliyun.com/document_detail/173157.html?spm=5176.10695662.1996646101.searchclickresult.3ebf450evuaPT3
+    // star_server: https://help.aliyun.com/document_detail/173154.html?spm=a2c4g.11186623.6.627.39ad7e3342KOX4
+    optional string protocol = 25;
+
+    // inter_op_parallelism_threads
+    optional int32 inter_op_parallelism_threads = 26 [default = 0];
+
+    // intra_op_parallelism_threads
+    optional int32 intra_op_parallelism_threads = 27 [default = 0];
+
+    // tensor fusion on PAI-TF
+    optional bool tensor_fuse = 28 [default = false];
+
+    // write graph into graph.pbtxt and summary or not
+    optional bool write_graph = 29 [default = true];
+
+    // match variable patterns to freeze
+    repeated string freeze_gradient = 30;
+
+    // increment save config
+    optional IncrementSaveConfig incr_save_config = 31;
+
+    // enable oss stop signal
+    // stop by create OSS_STOP_SIGNAL under model_dir
+    optional bool enable_oss_stop_signal = 32 [default = false];
+
+    // stop training after dead_line time, format:
+    //   20220508 23:59:59
+    optional string dead_line = 33;
+}
